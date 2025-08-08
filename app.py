@@ -32,7 +32,7 @@ if not st.session_state.authed:
     st.stop()
 # -----------------------------------
 
-st.title("SA-230 Audit Writer")
+st.title(" Audit Writer")
 
 with st.sidebar:
     st.header("Options")
