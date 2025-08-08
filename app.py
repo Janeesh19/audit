@@ -13,14 +13,14 @@ OUTPUT_FILENAME_DEFAULT = "audit_output.txt"
 AUTH_PASSWORD = "audit9099"
 # ---------------------------------
 
-st.set_page_config(page_title="SA-230 Auditor", page_icon="📄", layout="centered")
+st.set_page_config(page_title="Auditor", page_icon="📄", layout="centered")
 
 # ---------- Password gate ----------
 if "authed" not in st.session_state:
     st.session_state.authed = False
 
 if not st.session_state.authed:
-    st.title("SA-230 Audit Writer")
+    st.title("Audit Writer")
     st.subheader("Sign in")
     pwd = st.text_input("Password", type="password")
     if st.button("Enter"):
