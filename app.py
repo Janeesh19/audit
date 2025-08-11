@@ -61,10 +61,11 @@ def _qdrant() -> QdrantClient:
 @st.cache_resource(show_spinner=False)
 def _llm():
     genai.configure(api_key=GOOGLE_API_KEY)
+    # Support both signatures across library versions
     try:
         return genai.GenerativeModel(GEMINI_MODEL_ID)            # positional
     except TypeError:
-        return genai.GenerativeModel(model_name=GEMINI_MODEL_ID) # some releases
+        return genai.GenerativeModel(model_name=GEMINI_MODEL_ID) # keyword in some releases
 
 # ─── HELPERS ───────────────────────────────────────────────────────────────────
 def _embed_query(wl: WordLlama, text: str) -> List[float]:
@@ -144,24 +145,10 @@ st.set_page_config(page_title=APP_TITLE)
 st.title(APP_TITLE)
 st.caption("A teaching assistant for SA 230 using WordLlama, Qdrant, and Gemini.")
 
-# Sidebar controls, defines `show_passages`
-with st.sidebar:
-    st.subheader("Controls")
-    TOP_K = st.slider("Top K", min_value=1, max_value=MAX_TOP_K, value=TOP_K)
-    show_passages = st.checkbox("Show retrieved passages", value=False)
-    st.write("Secrets are read from Streamlit Secrets. No keys in code.")
-
 if "history" not in st.session_state:
     st.session_state.history = []
 
-if not st.session_state.history:
-    with st.expander("Suggested starting prompts"):
-        st.write("- What is the purpose of audit documentation in SA 230?")
-        st.write("- What should be included in audit documentation?")
-        st.write("- How long must audit documentation be retained?")
-        st.write("- Give me a simple checklist for SA 230 compliance.")
-
-query = st.chat_input("Ask anything about SA 230, or say hi to start.")
+query = st.chat_input("Ask anything about SA 230.")
 if query:
     user_q = query.strip()
     if not user_q:
@@ -205,11 +192,6 @@ if query:
 
     st.session_state.history.append({"role": "user", "content": user_q})
     st.session_state.history.append({"role": "assistant", "content": answer})
-
-    if show_passages and contexts:
-        with st.expander("Retrieved passages"):
-            for i, c in enumerate(contexts, start=1):
-                st.markdown(f"**Passage {i}**\n\n{c[:MAX_CTX_CHARS]}")
 
 # Render chat
 for msg in st.session_state.history:
