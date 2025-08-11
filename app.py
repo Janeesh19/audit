@@ -61,11 +61,10 @@ def _qdrant() -> QdrantClient:
 @st.cache_resource(show_spinner=False)
 def _llm():
     genai.configure(api_key=GOOGLE_API_KEY)
-    # Accept both old and new signatures
     try:
-        return genai.GenerativeModel(GEMINI_MODEL_ID)               # positional
+        return genai.GenerativeModel(GEMINI_MODEL_ID)            # positional
     except TypeError:
-        return genai.GenerativeModel(model_name=GEMINI_MODEL_ID)    # keyword in some releases
+        return genai.GenerativeModel(model_name=GEMINI_MODEL_ID) # some releases
 
 # ─── HELPERS ───────────────────────────────────────────────────────────────────
 def _embed_query(wl: WordLlama, text: str) -> List[float]:
@@ -143,6 +142,14 @@ def _rate_limit_ok() -> bool:
 # ─── UI ─────────────────────────────────────────────────────────────────────────
 st.set_page_config(page_title=APP_TITLE)
 st.title(APP_TITLE)
+st.caption("A teaching assistant for SA 230 using WordLlama, Qdrant, and Gemini.")
+
+# Sidebar controls, defines `show_passages`
+with st.sidebar:
+    st.subheader("Controls")
+    TOP_K = st.slider("Top K", min_value=1, max_value=MAX_TOP_K, value=TOP_K)
+    show_passages = st.checkbox("Show retrieved passages", value=False)
+    st.write("Secrets are read from Streamlit Secrets. No keys in code.")
 
 if "history" not in st.session_state:
     st.session_state.history = []
