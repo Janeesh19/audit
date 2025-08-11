@@ -1,5 +1,6 @@
 # app_chatbot_sa230_tutor.py
 import os
+import time
 from typing import List
 
 import streamlit as st
@@ -7,7 +8,6 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import ScoredPoint
 from wordllama import WordLlama
 import google.generativeai as genai
-import time
 
 # ─── CONSTANTS ──────────────────────────────────────────────────────────────────
 APP_TITLE        = "SA 230 Tutor"
@@ -21,10 +21,7 @@ RATE_LIMIT_SECS  = 2
 
 # ─── SETTINGS FROM SECRETS OR ENV ───────────────────────────────────────────────
 def _secret(names: list[str], *, required: bool = True, default: str | None = None) -> str | None:
-    """
-    Reads a setting from Streamlit secrets first, then environment variables.
-    You can pass multiple candidate names. The first found is used.
-    """
+    """Read from Streamlit secrets first, then env. Return first found."""
     def pick(key: str) -> str | None:
         try:
             if hasattr(st, "secrets") and key in st.secrets:
@@ -47,7 +44,6 @@ QDRANT_API_KEY     = _secret(["QDRANT_API_KEY"])
 QDRANT_COLLECTION  = _secret(["QDRANT_COLLECTION"], required=False, default="SA230")
 QDRANT_VECTOR_NAME = _secret(["QDRANT_VECTOR_NAME"], required=False, default="")
 
-# Accept GOOGLE_API_KEY as in Streamlit UI. Fall back to GEMINI_API_KEY.
 GOOGLE_API_KEY     = _secret(["GOOGLE_API_KEY", "GEMINI_API_KEY"])
 GEMINI_MODEL_ID    = _secret(["GEMINI_MODEL_ID", "GOOGLE_MODEL", "MODEL_ID"], required=False, default="gemini-1.5-flash")
 
@@ -65,7 +61,11 @@ def _qdrant() -> QdrantClient:
 @st.cache_resource(show_spinner=False)
 def _llm():
     genai.configure(api_key=GOOGLE_API_KEY)
-    return genai.GenerativeModel(model=GEMINI_MODEL_ID)
+    # Accept both old and new signatures
+    try:
+        return genai.GenerativeModel(GEMINI_MODEL_ID)               # positional
+    except TypeError:
+        return genai.GenerativeModel(model_name=GEMINI_MODEL_ID)    # keyword in some releases
 
 # ─── HELPERS ───────────────────────────────────────────────────────────────────
 def _embed_query(wl: WordLlama, text: str) -> List[float]:
@@ -105,8 +105,7 @@ def _build_tutor_prompt(user_q: str, contexts: List[str], chat_history: List[dic
     history_lines = []
     for h in chat_history[-HISTORY_TURNS:]:
         role = "User" if h["role"] == "user" else "Tutor"
-        content = h["content"][:500]
-        history_lines.append(f"{role}: {content}")
+        history_lines.append(f"{role}: {h['content'][:500]}")
     history_block = "\n".join(history_lines) if history_lines else "None"
 
     ctx_block = "\n\n".join(c[:MAX_CTX_CHARS] for c in contexts if c) if contexts else ""
@@ -145,6 +144,12 @@ def _rate_limit_ok() -> bool:
 st.set_page_config(page_title=APP_TITLE)
 st.title(APP_TITLE)
 st.caption("A teaching assistant for SA 230 using WordLlama, Qdrant, and Gemini.")
+
+with st.sidebar:
+    st.subheader("Controls")
+    TOP_K = st.slider("Top K", min_value=1, max_value=MAX_TOP_K, value=TOP_K)
+    show_passages = st.checkbox("Show retrieved passages", value=False)
+    st.write("Secrets are read from Streamlit Secrets. No keys in code.")
 
 if "history" not in st.session_state:
     st.session_state.history = []
