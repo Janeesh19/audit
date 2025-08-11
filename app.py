@@ -172,7 +172,6 @@ if not _password_gate():
 col1, col2 = st.columns([0.7, 0.3])
 with col1:
     st.title(APP_TITLE)
-    st.caption("A teaching assistant for SA 230 using WordLlama, Qdrant, and Gemini.")
 with col2:
     if st.button("Log out"):
         st.session_state.clear()
