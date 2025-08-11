@@ -146,12 +146,6 @@ st.set_page_config(page_title=APP_TITLE)
 st.title(APP_TITLE)
 st.caption("A teaching assistant for SA 230 using WordLlama, Qdrant, and Gemini.")
 
-with st.sidebar:
-    st.subheader("About")
-    st.write("No chat data is stored server side. Secrets come from Streamlit Secrets.")
-    TOP_K = st.slider("Top K", min_value=1, max_value=MAX_TOP_K, value=TOP_K)
-    show_passages = st.checkbox("Show retrieved passages", value=False)
-
 if "history" not in st.session_state:
     st.session_state.history = []
 
